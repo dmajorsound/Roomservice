@@ -1,7 +1,7 @@
 desc: Ahh
 //tags: reverb room acoustics image-source filter education surround
 //author: Bernd Dormayer
-//version: 1.3.3
+//version: 1.3.4
 //
 // Physical room reverb:
 //   Direct sound  : delay r/c, level 1/r, air absorption, stereo by facing direction (level + delay)
@@ -185,7 +185,7 @@ options:want_all_kb
 
 @init
 // THE VERSION, once: the footer text (the desc line and //version above must say the same)
-strcpy(#verstr, "V 1.3.3 - developed with AI assistance");
+strcpy(#verstr, "V 1.3.4 - developed with AI assistance");
 ext_noinit = 1;                            // do not re-run @init at every playback start
 gfx_ext_retina = 1;
 C_SND = 343;
@@ -4713,7 +4713,7 @@ function drawspan() local(h, px, py, x1, y1, x2, y2, ok)
     spAl > 0.01 ? ( col(cSRC, 0.55 * spAl); LNW(x1, y1, x2, y2, 1.4); );
     col(cSRC, 0.55); CIF(x1, y1, 2.2, 1); CIF(x2, y2, 2.2, 1);
     slider98 < 0.5 ? ( PJ(sx, sy, sz); col(cSRC, 1); CI(qx, qy, 12.6, 0); CI(qx, qy, 13.2, 0); );   // mono: one thin ring around the ball (one channel)
-// the two ends are handles - drag = stereo width (also Alt+Shift+drag on the source ball, see the room view mouse)
+// the two ends are handles - they show the stereo width (set with Shift + wheel; clicks on them: 100 % / 0 %)
     spX1 = x1; spY1 = y1; spX2 = x2; spY2 = y2; spCx = (x1 + x2) / 2; spCy = (y1 + y2) / 2;
     spHL = max(1, sqrt(sqr(x2 - x1) + sqr(y2 - y1)) / 2); spUx = (x2 - x1) / (2 * spHL); spUy = (y2 - y1) / (2 * spHL);
     spHov = spHL >= 12 && (sqr(mx - x1) + sqr(my - y1) < 64 || sqr(mx - x2) + sqr(my - y2) < 64);   // the mouse on a handle (the walls and edges stand back - tooltips and clicks)
@@ -9862,7 +9862,7 @@ rbtn(VX + 156, BRY, 5.5, "L", lockL, cLIS, lockL ? "Listener locked – click to
 rbtn(VX + 170, BRY, 5.5, "B", lockB, cBARTT, lockB ? "Barrier position locked – click to unlock" : "Lock the position of the barrier (handle in the room and Pos knob)") ? ( vopt[9] = lkb + (lockB ? -4 : 4); );
 rbtn(VX + 184, BRY, 5.5, floor(slider41 + 0.5) == 2 ? "W" : "D", lockE, cELK, lockE ? "Door / window locked – click to unlock" : "Lock the door / window: its place in the wall and how far it is open (mouse, wheel, Open knob)") ? ( vopt[9] = lkb + (lockE ? -8 : 8); );
 ) : (
-  col(cMUTED, 1); gfx_setfont(4); wvnw > 0 ? txt(#wvn, VX + VW - 10, BRY, 2); txtfit(isfree ? "Drag = move  ·  Ctrl/Cmd + drag = on a line  ·  Shift + drag = height  ·  Alt+Shift + drag = stereo width  ·  double-click = center" : "Drag = move  ·  Ctrl/Cmd + drag = on a line  ·  Shift + drag = height  ·  Alt+Shift + drag = stereo width  ·  double-click = center  ·  front corner = whole room  ·  drag a room edge = room size", VX + 10, BRY, VW - 60 - (wvnw > 0 ? wvnw + 14 : 0)); wvnw = 0;
+  col(cMUTED, 1); gfx_setfont(4); wvnw > 0 ? txt(#wvn, VX + VW - 10, BRY, 2); txtfit(isfree ? "Drag = move  ·  Ctrl/Cmd + drag = on a line  ·  Shift + drag = height  ·  Shift + wheel = stereo width  ·  double-click = center" : "Drag = move  ·  Ctrl/Cmd + drag = on a line  ·  Shift + drag = height  ·  Shift + wheel = stereo width  ·  double-click = center  ·  front corner = whole room  ·  drag a room edge = room size", VX + 10, BRY, VW - 60 - (wvnw > 0 ? wvnw + 14 : 0)); wvnw = 0;
 );
 // BACK PART material in the enlarged view (only with a barrier): own material for the part between back wall and barrier
 bon && !isfree && zoomv ? (
@@ -10035,8 +10035,7 @@ time_precise() - lkT < 2.5 ? ( tipon = 1; tipforce = 1; tipstr = lkWho == 2 ? "T
     !devm && slider110 < 0.5 && !lockS ? (
       spOk && spHL >= 12 && dSrc >= 10 && !rflHov && !rflhh(0) && !rflhh(1) && (sqr(mx - spX1) + sqr(my - spY1) < 64 || sqr(mx - spX2) + sqr(my - spY2) < 64) ? ( swDrag = 1; swMode = 1;   // (a reflector under the handle wins)   // Alt+click = 100 %, Ctrl/Cmd+click = 0 % (mono), double-click = 100 % <-> 0 %
         swClk = 0; (mouse_cap & 16) && !(mouse_cap & 8) ? ( setp(98, 100); swClk = 1; ) : (mouse_cap & 4) ? ( setp(98, 0); swClk = 1; ) : time_precise() - swDT < 0.35 ? ( setp(98, slider98 > 50 ? 0 : 100); swClk = 1; swDT = 0; ) : ( swDT = time_precise(); );
-        swClk ? ( swDrag = 0; click = 0; dSrc = dLs = 999; dBh = dBe = 99; inEl = 0; swSet = 1; ); ) : (
-      (mouse_cap & 16) && (mouse_cap & 8) && dSrc < 15 ? ( swDrag = 1; swMode = 0; ); );
+        swDrag = 0; click = 0; dSrc = dLs = 999; dBh = dBe = 99; inEl = 0; swSet = 1; );   // the handles are not dragged: the width is set with Shift + wheel (and the clicks above) - a click on a handle moves nothing
       swDrag ? ( swW0 = slider98; swX0 = mx; swD0 = max(4, abs((mx - spCx) * spUx + (my - spCy) * spUy)); dSrc = dLs = 999; dBh = dBe = 99; inEl = 0; );
     );   // room off = stereo panner - the listener rests (only the source pans) // (room off = 3D panner - the positions count again) // room off - source and listener cannot be moved (it would not change the sound)
     hitw = 0;

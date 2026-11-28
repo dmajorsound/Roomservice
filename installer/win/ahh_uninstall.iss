@@ -1,10 +1,10 @@
 ; Ahh uninstaller for Windows (Inno Setup 6): removes Ahh and Roomservice (its name up to 1.0.4), VST3 and CLAP.
 ; Projects and presets stay untouched. ISCC /DAppVer=1.0.5 /DFileVer=1.0.5
 #ifndef AppVer
-  #define AppVer "1.3.3"
+  #define AppVer "1.3.4"
 #endif
 #ifndef FileVer
-  #define FileVer "1.3.3"
+  #define FileVer "1.3.4"
 #endif
 
 [Setup]

@@ -228,8 +228,12 @@ void RoomServiceEditor::mouse(const juce::MouseEvent& e, bool up) {
 void RoomServiceEditor::mouseWheelMove(const juce::MouseEvent& e, const juce::MouseWheelDetails& w) {
     mouse(e);
     auto* g = proc.engine.gen.get();
-    g->v_mouse_wheel += w.deltaY * (w.isReversed ? -1.0 : 1.0) * 857.0;   // one notch (~0.14) = 120 as in REAPER
-    g->v_mouse_hwheel += w.deltaX * 857.0;
+    // Shift + wheel: macOS (and some Windows mice) hand it over as a sideways scroll - for the script it stays the wheel
+    // with Shift held (the stereo width in the Stage View, the fine step of the knobs)
+    const bool shiftSideways = e.mods.isShiftDown() && w.deltaY == 0.0f && w.deltaX != 0.0f;
+    const double dy = shiftSideways ? w.deltaX : w.deltaY;
+    g->v_mouse_wheel += dy * (w.isReversed ? -1.0 : 1.0) * 857.0;   // one notch (~0.14) = 120 as in REAPER
+    if (!shiftSideways) g->v_mouse_hwheel += w.deltaX * 857.0;
 }
 
 bool RoomServiceEditor::keyPressed(const juce::KeyPress& k) {

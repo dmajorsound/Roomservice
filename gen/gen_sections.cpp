@@ -644,8 +644,8 @@ void Gen::initStrings() {
   setLiteral(10639, "D");
   setLiteral(10640, "Door / window locked \342\200\223 click to unlock");
   setLiteral(10641, "Lock the door / window: its place in the wall and how far it is open (mouse, wheel, Open knob)");
-  setLiteral(10642, "Drag = move  \302\267  Ctrl/Cmd + drag = on a line  \302\267  Shift + drag = height  \302\267  Alt+Shift + drag = stereo width  \302\267  double-click = center");
-  setLiteral(10643, "Drag = move  \302\267  Ctrl/Cmd + drag = on a line  \302\267  Shift + drag = height  \302\267  Alt+Shift + drag = stereo width  \302\267  double-click = center  \302\267  front corner = whole room  \302\267  drag a room edge = room size");
+  setLiteral(10642, "Drag = move  \302\267  Ctrl/Cmd + drag = on a line  \302\267  Shift + drag = height  \302\267  Shift + wheel = stereo width  \302\267  double-click = center");
+  setLiteral(10643, "Drag = move  \302\267  Ctrl/Cmd + drag = on a line  \302\267  Shift + drag = height  \302\267  Shift + wheel = stereo width  \302\267  double-click = center  \302\267  front corner = whole room  \302\267  drag a room edge = room size");
   setLiteral(10644, "Back part");
   setLiteral(10645, "%s  \316\261 %.2f");
   setLiteral(10646, "Material of the back part (back wall to barrier): own walls, floor and ceiling \342\200\223 e.g. a tiled bathroom next to a dry room");
@@ -1986,7 +1986,7 @@ void Gen::initStrings() {
   setLiteral(11981, "Input gain");
   setLiteral(11982, "Snapshot morph");
   setLiteral(11983, "Module mix");
-  setLiteral(11984, "V 1.3.3 - developed with AI assistance");
+  setLiteral(11984, "V 1.3.4 - developed with AI assistance");
   setLiteral(11985, "00000000000000000000000000000000000000000000000000000000000000000000016adddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddbb98653100000000000000000000000000000000000000000");
   setLiteral(11986, "000000000000000000000000000000000000000000000000000000000000000000002dfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffeb863000000000000000000000000000000000000");
   setLiteral(11987, "00000000000000000000000000000000000000000000000000000000000000000000cfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffeb7300000000000000000000000000000000");

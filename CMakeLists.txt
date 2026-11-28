@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.22)
 # Universal (Apple Silicon + Intel). For a faster Intel-only build: -DCMAKE_OSX_ARCHITECTURES=x86_64
 set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13" CACHE STRING "")
 set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "")
-project(Roomservice VERSION 1.3.3 LANGUAGES C CXX)
+project(Roomservice VERSION 1.3.4 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -24,7 +24,7 @@ juce_add_plugin(Roomservice
   PLUGIN_CODE AhhS              # (a new plug-in: stereo and 5.1 in one; not the id of the stereo-only Ahh up to 1.0.x)
   FORMATS ${RS_FORMATS}
   PRODUCT_NAME "Ahh"
-  VERSION 1.3.3
+  VERSION 1.3.4
   IS_SYNTH FALSE
   NEEDS_MIDI_INPUT FALSE
   NEEDS_MIDI_OUTPUT FALSE
