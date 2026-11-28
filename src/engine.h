@@ -40,6 +40,7 @@ public:
     void runGfx(GfxBackend* b, int w, int h);
 
     int latency() const { const double d = gen->v_pdc_delay; return d > 0 ? (int)d : 0; }
+    int inputChannels = 0;   // channels of the track's input bus (1 mono, 2 stereo, 6 5.1; 0 = unknown): the script's input meters
 
     // notifications from the script (slider_automate / sliderchange) -> plugin
     std::function<void(int, int)> onAutomate;

@@ -340,7 +340,7 @@ def promotable(f):
 # A global that every piece of code assigns before it reads it, and that no called function touches in between, never
 # carries a value from one run to the next: each function / section gets its own C++ local for it (t_name). Variables
 # the C++ side reads or writes by name (HOST_VISIBLE) always stay real.
-HOST_VISIBLE = {'vopt', 'updav', 'updgo', 'sysdark', 'fbw', 'mango', 'updprog', 'gs', 'hlpon', 'kovl', 'helpon'}
+HOST_VISIBLE = {'inch', 'vopt', 'updav', 'updgo', 'sysdark', 'fbw', 'mango', 'updprog', 'gs', 'hlpon', 'kovl', 'helpon'}
 
 def temp_globals(funcs, trees, fglob):
     bodies = [(f.body, set(f.params) | set(f.locals)) for f in funcs.values()] + [(t, set()) for t in trees.values() if t is not None]

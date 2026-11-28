@@ -1,7 +1,7 @@
 desc: Ahh
 //tags: reverb room acoustics image-source filter education surround
 //author: Bernd Dormayer
-//version: 1.3.2
+//version: 1.3.3
 //
 // Physical room reverb:
 //   Direct sound  : delay r/c, level 1/r, air absorption, stereo by facing direction (level + delay)
@@ -164,6 +164,7 @@ slider149:0<-24,6,0.1>-5.1 level C (dB)
 slider150:0<-24,6,0.1>-5.1 level Ls (dB)
 slider151:0<-24,6,0.1>-5.1 level Rs (dB)
 slider152:0<0,2,1{Front,Rear,Around}>-5.1: delay echoes (left / right) on
+slider153:1<0,3,1{12 dB,24 dB,48 dB,96 dB}>-LFE filter slope (per octave)
 
 in_pin:left input
 in_pin:right input
@@ -184,7 +185,7 @@ options:want_all_kb
 
 @init
 // THE VERSION, once: the footer text (the desc line and //version above must say the same)
-strcpy(#verstr, "V 1.3.2 - developed with AI assistance");
+strcpy(#verstr, "V 1.3.3 - developed with AI assistance");
 ext_noinit = 1;                            // do not re-run @init at every playback start
 gfx_ext_retina = 1;
 C_SND = 343;
@@ -340,7 +341,7 @@ qLMD = alloc(4 * 590); memset(qLMD, 0, 4 * 590);                     // limiter 
 // ---- RoomservicePro: the LFE - the direct sound alone (no reflections, no reverb: a subwoofer carries the source, not the
 // room), low-passed at 80 or 120 Hz (4th-order Linkwitz-Riley), with its own level. The mono of the direct sound is the panned
 // tap read back at its own gain (the pan is power-normalized, so the gains' magnitude is the tap's gain).
-qLFC = alloc(10); qLFW = alloc(64); qLFS = alloc(4); memset(qLFS, 0, 4); qLFfc = -1; qLFm = 0; cLFG = 0; xLFG = 0;
+qLFC = alloc(40); qLFW = alloc(64); qLFS = alloc(16); memset(qLFS, 0, 16); qLFn = 2; qLFfc = -1; qLFm = 0; cLFG = 0; xLFG = 0;
 pro_on = 0; pro_was = 0;
 function q5edset() ( qEDL[0] = edL0; qEDL[1] = edL1; qEDL[2] = edL2; qEDL[3] = edL3;
   qEDL[4] = min(EDN - 1, floor(0.0046 * srate)); qEDL[5] = min(EDN - 1, floor(0.0073 * srate));
@@ -349,7 +350,7 @@ function q5edset() ( qEDL[0] = edL0; qEDL[1] = edL1; qEDL[2] = edL2; qEDL[3] = e
 // does one of the five loudspeaker gains of tap k still move? (the settle test of @block)
 function q5mov(k) local(qpp, qxx, qjj, m) ( qpp = qG5c + k * 5; qxx = qG5x + k * 5; m = 0; qjj = 0; loop(5, abs(qxx[qjj] - qpp[qjj]) > 0.00001 * (qxx[qjj] + 0.00001) ? m = 1; qjj += 1; ); m; );
 // everything the 5.1 path keeps between samples, cleared (format switch, panic reset)
-function q5clear() ( memset(qLP, 0, 2 * TS); memset(qED, 0, 10 * EDN); memset(qSTS, 0, 40); memset(qBSS, 0, 40); memset(qFS, 0, 300); memset(qLMD, 0, 4 * 590); memset(QP5, 0, 128); memset(qLFS, 0, 4); qLFm = 0; );
+function q5clear() ( memset(qLP, 0, 2 * TS); memset(qED, 0, 10 * EDN); memset(qSTS, 0, 40); memset(qBSS, 0, 40); memset(qFS, 0, 300); memset(qLMD, 0, 4 * 590); memset(QP5, 0, 128); memset(qLFS, 0, 16); qLFm = 0; );
 edL0 = min(EDN - 1, floor(0.0043 * srate)); edL1 = min(EDN - 1, floor(0.0067 * srate)); edL2 = min(EDN - 1, floor(0.0049 * srate)); edL3 = min(EDN - 1, floor(0.0079 * srate)); q5edset();
 memset(fcLog, 0, 3 * TS); k0 = 0; loop(TS, fcLog[k0] = -1000; k0 += 1; ); fmov = 0;   // wall / air filter glide per tap: log corner, steps (free block above the labels)
 xSM = tIZ + TS; cSM = xSM + TS; oSM = cSM + TS;     // per tap: share of the unfiltered signal (sound through a wall keeps part of its highs)
@@ -5493,6 +5494,7 @@ function set51(i, v) (
   i == 145 ? ( slider145 = v; slider_automate(slider145); );
   i == 146 ? ( slider146 = v; slider_automate(slider146); );
   i == 152 ? ( slider152 = v; slider_automate(slider152); );
+  i == 153 ? ( slider153 = v; slider_automate(slider153); );
   i == 143 ? ( slider143 = v; slider_automate(slider143); );
   i == 144 ? ( slider144 = v; slider_automate(slider144); );
   i == 147 ? ( slider147 = v; slider_automate(slider147); );
@@ -6252,7 +6254,16 @@ fqmov ? ( k0 = 0; loop(240, fqCd[k0] = (fqC[k0] - fqCc[k0]) / samplesblock; k0 +
 fqmovB = 0; pro_on ? ( k0 = 0; loop(240, abs(fqCB[k0] - fqCcB[k0]) > 0.0000001 ? fqmovB = 1; k0 += 1; ); fqmovB ? ( k0 = 0; loop(240, fqCdB[k0] = (fqCB[k0] - fqCcB[k0]) / samplesblock; k0 += 1; ); ); );   // (RoomservicePro)
 qRD = min(QRBN - 4, floor(0.010 * srate));   // the rear offset: the rear network is fed 10 ms after the front
 // the LFE: crossover 80 / 120 Hz (two equal Butterworth sections = Linkwitz-Riley 4th order), level in dB, Off = gain 0 (glides)
-k0 = slider142 >= 0.5 ? 120 : 80; k0 != qLFfc ? ( qLFfc = k0; fdesignbl(qLFC, qLFW, 0, k0, 2); memcpy(qLFC + 5, qLFC, 5); memset(qLFS, 0, 4); );
+// LFE low-pass: 80 or 120 Hz, slope 12 / 24 / 48 / 96 dB per octave (slider153). 24 dB is the filter of every earlier version
+// (the same 12 dB stage twice); the others are Butterworth low-passes of 1, 4 or 8 stages.
+lfsl = min(3, max(0, floor(slider153 + 0.5)));
+k0 = (slider142 >= 0.5 ? 120 : 80) + 1000 * lfsl;
+k0 != qLFfc ? (
+  qLFfc = k0; k1 = slider142 >= 0.5 ? 120 : 80;
+  lfsl == 1 ? ( fdesignbl(qLFC, qLFW, 0, k1, 2); memcpy(qLFC + 5, qLFC, 5); qLFn = 2; )
+            : ( qLFn = lfsl == 0 ? 1 : (lfsl == 2 ? 4 : 8); fdesignbl(qLFC, qLFW, 0, k1, 2 * qLFn); );
+  memset(qLFS, 0, 16);
+);
 xLFG = slider141 >= 0.5 ? 10 ^ (min(10, max(-24, slider143)) / 20) : 0;
 eFx = slider152 < 0.5 ? 1 : (slider152 < 1.5 ? 0 : 0.70710678); eRx = slider152 < 0.5 ? 0 : (slider152 < 1.5 ? 1 : 0.70710678);   // 5.1: where the echoes' left / right difference plays
 trgL = 10 ^ (min(6, max(-24, slider147)) / 20); trgR = 10 ^ (min(6, max(-24, slider148)) / 20); trgC = 10 ^ (min(6, max(-24, slider149)) / 20); trgLs = 10 ^ (min(6, max(-24, slider150)) / 20); trgRs = 10 ^ (min(6, max(-24, slider151)) / 20);   // 5.1: the level of each loudspeaker channel (the LFE has its own level)
@@ -6265,7 +6276,7 @@ slhold = MAXIN + 2 * LINEMAX + (xDON || dlhold > 0 ? DLMAX : 0) + floor(srate * 
 slp ? (
   snap = 1; xfade = 0; xfG = 0;
   mp = mdM; loop(mdN, mp[2] = mp[5]; mp += 6; ); mdmov = 0;
-  pkIL = pkIR = pkOL = pkOR = 0; lmgv = 1;
+  pkIL = pkIR = pkOL = pkOR = 0; pkJC = pkJF = pkJS = pkJT = 0; lmgv = 1;
 );
 // ROOM MODES: their gains are smoothed per sample only while they move (within 1e-12: arrived)
 !slp ? ( mdmov = 0; mp = mdM; loop(mdN, abs(mp[5] - mp[2]) > 0.000000000001 ? ( mdmov = 1; ) : ( mp[2] = mp[5]; ); mp += 6; ); );
@@ -6347,6 +6358,7 @@ vopt[68] >= 0.5 ? (
 cMONO += (xMONO - cMONO) * sm; cMONO > 0.00001 ? ( inM = (inL + inR) * 0.5; inL += (inM - inL) * cMONO; inR += (inM - inR) * cMONO; );
 sdE = sdE * crk + sqr(inL - inR) * 0.25; mdE = mdE * crk + sqr(inL + inR) * 0.25;
 pkIL = max(abs(inL), pkIL * pmdec); pkIR = max(abs(inR), pkIR * pmdec); spIn = (inL + inR) * 0.5;
+inch >= 6 ? ( pkJC = max(abs(spl2), pkJC * pmdec); pkJF = max(abs(spl3), pkJF * pmdec); pkJS = max(abs(spl4), pkJS * pmdec); pkJT = max(abs(spl5), pkJT * pmdec); );   // a 5.1 input: C, LFE, Ls, Rs for the input meters (the room itself takes L and R)
 fany = (lcon || hcon) && !fbyp;
 cFMX += (xFMX - cFMX) * sm;
 !fpost && fany ? ( fmL = fchain(inL, lcSL, lcFL, hcSL, hcFL); fmR = fchain(inR, lcSR, lcFR, hcSR, hcFR);
@@ -6830,7 +6842,7 @@ pro_on ? (
   outL = qO[0]; outR = qO[1];
   // the LFE: the direct sound's mono through the crossover, its own level (glides like the other gains), the wet share of the mix
   cLFG += (xLFG - cLFG) * smQ;
-  qO[5] = bqrun(qLFm * cEQL * rmxk + bpMo * (1 - rmxk), qLFC, qLFS, 2) * cLFG * cMIX * cOG;   // (Room off: the LFE gets the source itself)
+  qO[5] = bqrun(qLFm * cEQL * rmxk + bpMo * (1 - rmxk), qLFC, qLFS, qLFn) * cLFG * cMIX * cOG;   // (Room off: the LFE gets the source itself)
 );
 // A / B LOUDNESS MATCH: measure what goes out (before the trim), play B as loud as A
 abPw += outL * outL + outR * outR; cABG += (xABG - cABG) * smab; outL *= cABG; outR *= cABG;
@@ -7068,23 +7080,26 @@ function mmbar(bx, yc, w, hh, v, c) local(f)
   f > 0.01 ? ( col(v >= 0.891 ? cWARN : c, 1); R(bx, yc + hh / 2 - hh * f, w, hh * f); );
 );
 function mmout(k) ( k == 0 ? pkOL : (k == 1 ? pkOR : (k == 2 ? qPK[2] : (k == 3 ? qPK[5] : (k == 4 ? qPK[3] : qPK[4])))); );
-function mmWd() ( slider136 >= 0.5 ? 31 : 17; );   // 2 x In + gap + 2 / 6 x Out
+function inN() ( inch >= 6 ? 6 : (inch >= 0.5 && inch < 1.5 ? 1 : 2); );   // input meters: 1 on a mono track, 2 on stereo, 6 on 5.1
+function mmin(k) ( inch >= 6 ? (k == 0 ? pkIL : (k == 1 ? pkIR : (k == 2 ? pkJC : (k == 3 ? pkJF : (k == 4 ? pkJS : pkJT))))) : (k == 0 ? pkIL : pkIR); );
+function innm(k) ( inN() == 1 ? "M" : (k == 0 ? "L" : (k == 1 ? "R" : (k == 2 ? "C" : (k == 3 ? "LFE" : (k == 4 ? "Ls" : "Rs"))))); );
+function mmWd() ( inN() * 3.5 + 3 + (slider136 >= 0.5 ? 6 : 2) * 3.5; );   // 1 / 2 / 6 x In + gap + 2 / 6 x Out
 function mmdraw(xr, yc) local(idl, x, k, n)
 (
   idl = time_precise() - lastblk > 0.3; n = slider136 >= 0.5 ? 6 : 2; x = xr - mmWd();
   col(cSURF, 1); R(x - 1, yc - 7, mmWd() + 2, 14);
-  mmbar(x, yc, 2.5, 12, idl ? 0 : pkIL, cDIM2); mmbar(x + 3.5, yc, 2.5, 12, idl ? 0 : pkIR, cDIM2);
-  k = 0; loop(n, mmbar(x + 10 + k * 3.5, yc, 2.5, 12, idl ? 0 : mmout(k), cIOTT); k += 1; );
+  k = 0; loop(inN(), mmbar(x + k * 3.5, yc, 2.5, 12, idl ? 0 : mmin(k), cDIM2); k += 1; );
+  k = 0; loop(n, mmbar(x + inN() * 3.5 + 3 + k * 3.5, yc, 2.5, 12, idl ? 0 : mmout(k), cIOTT); k += 1; );
 );
-function mmpop(xr, yc) local(idl, n, w, x, y, k, bx)
+function mmpop(xr, yc) local(idl, n, ni, w, x, y, k, bx, o)
 (
-  idl = time_precise() - lastblk > 0.3; n = slider136 >= 0.5 ? 6 : 2; w = 22 + (2 + n) * 15 + 12; x = max(4, min(xr - w, WT - w - 4)); y = yc + 10;
+  idl = time_precise() - lastblk > 0.3; n = slider136 >= 0.5 ? 6 : 2; ni = inN(); w = 22 + (ni + n) * 15 + 12; x = max(4, min(xr - w, WT - w - 4)); y = yc + 10;
   col(cINK, 0.14); RR(x + 1, y + 3, w, 86, 6); col(cSURF, 1); RR(x, y, w, 86, 6); col(cBORD, 1); RRO(x, y, w, 86, 6);
-  col(cMUTED, 1); gfx_setfont(7); txt("In", x + 8 + 12, y + 9, 1); txt("Out", x + 8 + 42 + (n - 1) * 7.5 + 4.5, y + 9, 1);
-  k = 0; loop(2 + n,
-    bx = x + 8 + k * 15 + (k >= 2 ? 12 : 0);
-    mmbar(bx, y + 44, 9, 52, idl ? 0 : (k == 0 ? pkIL : (k == 1 ? pkIR : mmout(k - 2))), k < 2 ? cDIM2 : cIOTT);
-    col(cMUTED, 1); gfx_setfont(7); txt(k == 0 ? "L" : (k == 1 ? "R" : (k == 2 ? "L" : (k == 3 ? "R" : (k == 4 ? "C" : (k == 5 ? "LFE" : (k == 6 ? "Ls" : "Rs")))))), bx + 4.5, y + 78, 1);
+  col(cMUTED, 1); gfx_setfont(7); txt("In", x + 8 + (ni * 15 - 6) / 2, y + 9, 1); txt("Out", x + 8 + ni * 15 + 12 + (n * 15 - 6) / 2, y + 9, 1);
+  k = 0; loop(ni + n,
+    bx = x + 8 + k * 15 + (k >= ni ? 12 : 0); o = k - ni;
+    mmbar(bx, y + 44, 9, 52, idl ? 0 : (k < ni ? mmin(k) : mmout(o)), k < ni ? cDIM2 : cIOTT);
+    col(cMUTED, 1); gfx_setfont(7); txt(k < ni ? innm(k) : (o == 0 ? "L" : (o == 1 ? "R" : (o == 2 ? "C" : (o == 3 ? "LFE" : (o == 4 ? "Ls" : "Rs"))))), bx + 4.5, y + 78, 1);
     k += 1; );
 );
 // the header meter under the mouse (-1 = none)
@@ -7682,7 +7697,7 @@ secopen(7) ? (
   tnow = time_precise();
   // audio not running (REAPER stopped and does not process the FX): the meters show silence instead of the last values
   aidle = tnow - lastblk > 0.3;
-  aidle ? ( mIL = mIR = mOL = mOR = 0; mGV = 1; mOC = mOLf = mOLs = mORs = 0; ) : ( mIL = pkIL; mIR = pkIR; mOL = pkOL; mOR = pkOR; mGV = lmgv; mOC = qPK[2]; mOLs = qPK[3]; mORs = qPK[4]; mOLf = qPK[5]; );   // (RoomservicePro: C, Ls, Rs, LFE)
+  aidle ? ( mIL = mIR = mOL = mOR = 0; mGV = 1; mOC = mOLf = mOLs = mORs = 0; mJC = mJF = mJS = mJT = 0; ) : ( mJC = pkJC; mJF = pkJF; mJS = pkJS; mJT = pkJT; mIL = pkIL; mIR = pkIR; mOL = pkOL; mOR = pkOR; mGV = lmgv; mOC = qPK[2]; mOLs = qPK[3]; mORs = qPK[4]; mOLf = qPK[5]; );   // (RoomservicePro: C, Ls, Rs, LFE)
 // PEAK HOLD as in a DAW: every channel keeps its highest peak for 3 s, then falls at 20 dB/s (the numbers can be
   // read); a click on the numbers resets them
   hdt = min(0.2, max(0, tnow - hTl)); hTl = tnow;
@@ -7690,7 +7705,8 @@ secopen(7) ? (
   v = dbs(mIR); v >= hIR ? ( hIR = v; tIR = tnow; ) : ( tnow - tIR > 3 ? hIR = max(v, hIR - 20 * hdt); );
   v = dbs(mOL); v >= hOL ? ( hOL = v; tOL = tnow; ) : ( tnow - tOL > 3 ? hOL = max(v, hOL - 20 * hdt); );
   v = dbs(mOR); v >= hOR ? ( hOR = v; tOR = tnow; ) : ( tnow - tOR > 3 ? hOR = max(v, hOR - 20 * hdt); );
-  hIn = max(hIL, hIR); hOut = max(hOL, hOR);
+  v = inN() == 6 ? dbs(max(max(mJC, mJF), max(mJS, mJT))) : -150; v >= hI6 ? ( hI6 = v; tI6 = tnow; ) : ( tnow - tI6 > 3 ? hI6 = max(v, hI6 - 20 * hdt); );   // a 5.1 input: the held peak of its other four channels
+  hIn = max(max(hIL, hIR), hI6); hOut = max(hOL, hOR);
   slider136 >= 0.5 ? ( v = max(max(dbs(mOC), dbs(mOLf)), max(dbs(mOLs), dbs(mORs))); v >= hO5 ? ( hO5 = v; tO5 = tnow; ) : ( tnow - tO5 > 3 ? hO5 = max(v, hO5 - 20 * hdt); ); hOut = max(hOut, hO5); );
   limact = clipon && gwarn > 0 && !aidle;
   // icon buttons in the header (Expert only)
@@ -7723,32 +7739,32 @@ secopen(7) ? (
 // BASIC: the same look, compact - spectrum | output meters, faders Dry / wet | Output
     q51 = !basic && slider136 >= 0.5;   // RoomservicePro: the 5.1 output - six meters, the vectorscope, the LFE / Center controls
     om51 = slider136 >= 0.5;   // 5.1: six output meters in every view (Basic too); the 5.1 controls only in Expert (q51)
-    omw = 64; omw2 = om51 ? 128 : 64; omy = IOY + (basic ? 44 : 54); omh = IOH - (basic ? 44 + 46 : 54 + 80); omx1 = IOX + 14; omx2 = IOX + IOW - 14 - omw2; basic && om51 ? ( omh -= 10; );   // (Basic, 5.1: the six channel names stay clear of the Output fader's text)   // 8 px more under the meters - L / R sat on the fader names
+    in6 = inN() == 6; mon1 = inN() == 1; omw = in6 ? 128 : 64; omw2 = om51 ? 128 : 64; omy = IOY + (basic ? 44 : 54); omh = IOH - (basic ? 44 + 46 : 54 + 80); omx1 = IOX + 14; omx2 = IOX + IOW - 14 - omw2; basic && om51 ? ( omh -= 10; );   // (Basic, 5.1: the six channel names stay clear of the Output fader's text)   // 8 px more under the meters - L / R sat on the fader names
     gj = basic ? 1 : 0;
     loop(basic ? 1 : 2,
-      omx = gj == 0 ? omx1 : omx2; omwj = gj == 0 ? omw : omw2; om6 = om51 && gj == 1;
-      !basic ? ( col(cMUTED, 1); gfx_setfont(4); txt(gj == 0 ? "Input" : (om6 ? "Output 5.1" : "Output"), omx + omwj / 2, IOY + 30, 1); );
+      omx = gj == 0 ? omx1 : omx2; omwj = gj == 0 ? omw : omw2; om6 = om51 && gj == 1; io6 = om6 || (in6 && gj == 0);   // io6: six bars in this group (5.1 output, or a 5.1 input)
+      !basic ? ( col(cMUTED, 1); gfx_setfont(4); txt(gj == 0 ? (in6 ? "Input 5.1" : (mon1 ? "Input mono" : "Input")) : (om6 ? "Output 5.1" : "Output"), omx + omwj / 2, IOY + 30, 1); );
       gk = 0;
-      loop(om6 ? 6 : 2,
-        omv = gj == 0 ? (gk == 0 ? mIL : mIR) : (gk == 0 ? mOL : (gk == 1 ? mOR : (gk == 2 ? mOC : (gk == 3 ? mOLf : (gk == 4 ? mOLs : mORs))))); mdb = dbs(omv);
-        bx = omx + 10 + gk * (om6 ? 18 : 26);
+      loop(io6 ? 6 : (gj == 0 && mon1 ? 1 : 2),
+        omv = gj == 0 ? (in6 ? (gk == 0 ? mIL : (gk == 1 ? mIR : (gk == 2 ? mJC : (gk == 3 ? mJF : (gk == 4 ? mJS : mJT))))) : (gk == 0 ? mIL : mIR)) : (gk == 0 ? mOL : (gk == 1 ? mOR : (gk == 2 ? mOC : (gk == 3 ? mOLf : (gk == 4 ? mOLs : mORs))))); mdb = dbs(omv);
+        bx = omx + 10 + gk * (io6 ? 18 : 26) + (gj == 0 && mon1 ? 13 : 0);   // (mono: the one bar in the middle of the group)
         mbarV(bx + 2, omy, 12, omh, mdb);   // a smooth bar
         gk == 0 ? ( col(cDIM2, 1); i = 0; loop(5, sdb = i == 0 ? -3 : (i == 1 ? -6 : (i == 2 ? -12 : (i == 3 ? -24 : -48))); sy0 = omy + omh * (1 - lin2f(sdb, -60, 0)); R(bx - 2, sy0 - 0.4, 3, 0.8); i += 1; ); );
-        col(cMUTED, 1); gfx_setfont(7); txt(om6 ? (gk == 0 ? "L" : (gk == 1 ? "R" : (gk == 2 ? "C" : (gk == 3 ? "LFE" : (gk == 4 ? "Ls" : "Rs"))))) : (gk == 0 ? "L" : "R"), bx + 8, omy + omh + 8, 1);
+        col(cMUTED, 1); gfx_setfont(7); txt(io6 ? (gk == 0 ? "L" : (gk == 1 ? "R" : (gk == 2 ? "C" : (gk == 3 ? "LFE" : (gk == 4 ? "Ls" : "Rs"))))) : (gj == 0 && mon1 ? "M" : (gk == 0 ? "L" : "R")), bx + 8, omy + omh + 8, 1);
         om6 && !basic ? o5field(gk == 0 ? 0 : (gk == 1 ? 1 : (gk == 2 ? 2 : (gk == 3 ? 3 : (gk == 4 ? 4 : 5)))), bx + 8, omy + omh + 21);   // 5.1: the channel's level, typed in
-        !om6 ? (
+        !io6 ? (
           mdh = gj == 0 ? (gk == 0 ? hIL : hIR) : (gk == 0 ? hOL : hOR);   // the held peak (3 s), not the moving level
           col(mdh > -0.05 ? cIOTT : cTEXT, 1); gfx_setfont(6); mdh < -59.9 ? strcpy(#w1, "-inf") : sprintf(#w1, "%.1f", mdh); txt(#w1, bx + 8, omy - 8, 1);
         );
-        click && inbox(bx - 8, omy - 16, 32, 16) ? ( hIL = hIR = hOL = hOR = -150; hO5 = -150; click = 0; );
+        click && inbox(bx - 8, omy - 16, 32, 16) ? ( hIL = hIR = hOL = hOR = -150; hO5 = -150; hI6 = -150; click = 0; );
         gk += 1;
       );
-      om6 ? ( mdh = hOut; col(mdh > -0.05 ? cIOTT : cTEXT, 1); gfx_setfont(6); mdh < -59.9 ? strcpy(#w1, "-inf") : sprintf(#w1, "%.1f", mdh); txt(#w1, omx + 10 + 54, omy - 8, 1); );   // (5.1: one held peak over all six)
-      mh = gj == 0 ? hIn : hOut; mh > -60 ? ( col(mh > -1 ? cIOTT : cTEXT, 1); R(omx + 8, omy + omh * (1 - lin2f(mh, -60, 0)) - 0.6, om6 ? 110 : 46, 1.2); );   // peak hold
+      io6 ? ( mdh = gj == 0 ? hIn : hOut; col(mdh > -0.05 ? cIOTT : cTEXT, 1); gfx_setfont(6); mdh < -59.9 ? strcpy(#w1, "-inf") : sprintf(#w1, "%.1f", mdh); txt(#w1, omx + 10 + 54, omy - 8, 1); );   // (5.1: one held peak over all six)
+      mh = gj == 0 ? hIn : hOut; mh > -60 ? ( col(mh > -1 ? cIOTT : cTEXT, 1); R(omx + 8 + (gj == 0 && mon1 ? 13 : 0), omy + omh * (1 - lin2f(mh, -60, 0)) - 0.6, io6 ? 110 : (gj == 0 && mon1 ? 20 : 46), 1.2); );   // peak hold
       gj == 1 ? (                                                        // limiter gain reduction: a thin bar from the top (output color)
         grdb = -dbs(mGV); clipon && grdb > 0.05 ? ( col(cIOTT, 1); R(omx + omwj - 4, omy, 3, omh * min(1, grdb / 12)); );
       );
-      tipbox(omx, omy - 14, omwj, omh + 28, gj == 0 ? "Input level, left and right (peak, dBFS) – numbers and line = peak hold (3 s, click the numbers = reset)" : (om6 ? "Output level after the limiter, the six channels L R C LFE Ls Rs (peak, dBFS) – number and line = the held peak of all six (3 s, click the number = reset)" : "Output level after the limiter, left and right (peak, dBFS) – numbers and line = peak hold (3 s, click the numbers = reset)"));
+      tipbox(omx, omy - 14, omwj, omh + 28, gj == 0 ? (in6 ? "Input level of the six channels of the track, L R C LFE Ls Rs (peak, dBFS) – the room takes L and R as its source; number and line = the held peak (3 s, click the number = reset)" : (mon1 ? "Input level of the mono track (peak, dBFS) – number and line = peak hold (3 s, click the number = reset)" : "Input level, left and right (peak, dBFS) – numbers and line = peak hold (3 s, click the numbers = reset)")) : (om6 ? "Output level after the limiter, the six channels L R C LFE Ls Rs (peak, dBFS) – number and line = the held peak of all six (3 s, click the number = reset)" : "Output level after the limiter, left and right (peak, dBFS) – numbers and line = peak hold (3 s, click the numbers = reset)"));
       gj += 1;
     );
     // spectrum between the meters, as high as they are
@@ -7784,12 +7800,18 @@ secopen(7) ? (
     // the left. The level of each channel is typed in under its meter (o5field)
     kscale(1); kcol = cIOTT; o5y = IOY + IOH - 36;
     lfon = slider141 >= 0.5;
-    chip(IOX + 14, o5y - 17, 54, 14, "Mute LFE", !lfon, cWARN) ? ( slider141 = lfon ? 0 : 1; slider_automate(slider141); click = 0; );
-    tipbox(IOX + 14, o5y - 17, 54, 14, lfon ? "Mute LFE: silence the subwoofer channel (the five other channels stay as they are)" : "LFE muted – click: the subwoofer channel plays again (the direct sound alone, low-passed at the crossover)");
-    segtrack(IOX + 14, o5y + 3, 54, 14);
-    segp(IOX + 14, o5y + 3, 54, 14, 2, 0, "80", slider142 < 0.5, cIOTT) ? ( slider142 = 0; slider_automate(slider142); click = 0; );
-    segp(IOX + 14, o5y + 3, 54, 14, 2, 1, "120", slider142 >= 0.5, cIOTT) ? ( slider142 = 1; slider_automate(slider142); click = 0; );
-    tipbox(IOX + 14, o5y + 3, 54, 14, "LFE crossover: the subwoofer gets everything below 80 or 120 Hz (24 dB per octave)");
+    chip(IOX + 14, o5y - 24, 76, 14, "Mute LFE", !lfon, cWARN) ? ( slider141 = lfon ? 0 : 1; slider_automate(slider141); click = 0; );
+    tipbox(IOX + 14, o5y - 24, 76, 14, lfon ? "Mute LFE: silence the subwoofer channel (the five other channels stay as they are)" : "LFE muted – click: the subwoofer channel plays again (the direct sound alone, low-passed at the crossover)");
+    segtrack(IOX + 14, o5y - 8, 76, 14);
+    segp(IOX + 14, o5y - 8, 76, 14, 2, 0, "80", slider142 < 0.5, cIOTT) ? ( slider142 = 0; slider_automate(slider142); click = 0; );
+    segp(IOX + 14, o5y - 8, 76, 14, 2, 1, "120", slider142 >= 0.5, cIOTT) ? ( slider142 = 1; slider_automate(slider142); click = 0; );
+    tipbox(IOX + 14, o5y - 8, 76, 14, "LFE crossover: the subwoofer gets everything below 80 or 120 Hz");
+    segtrack(IOX + 14, o5y + 8, 76, 14); lfsq = min(3, max(0, floor(slider153 + 0.5)));
+    segp(IOX + 14, o5y + 8, 76, 14, 4, 0, "12", lfsq == 0, cIOTT) ? ( slider153 = 0; slider_automate(slider153); click = 0; );
+    segp(IOX + 14, o5y + 8, 76, 14, 4, 1, "24", lfsq == 1, cIOTT) ? ( slider153 = 1; slider_automate(slider153); click = 0; );
+    segp(IOX + 14, o5y + 8, 76, 14, 4, 2, "48", lfsq == 2, cIOTT) ? ( slider153 = 2; slider_automate(slider153); click = 0; );
+    segp(IOX + 14, o5y + 8, 76, 14, 4, 3, "96", lfsq == 3, cIOTT) ? ( slider153 = 3; slider_automate(slider153); click = 0; );
+    tipbox(IOX + 14, o5y + 8, 76, 14, "LFE filter slope: how steeply the subwoofer channel is cut above the crossover – 12, 24, 48 or 96 dB per octave");
     o5x0 = IOX + 78; o5sp = min(90, (IOX + IOW - 14 - o5x0) / 5); gk = 0;
     loop(5,
       o5cx = o5x0 + o5sp * (gk + 0.5);
@@ -7854,7 +7876,9 @@ secopen(7) ? (
     gj == 1 && slider136 >= 0.5 ? (   // 5.1: six thin bars, L R C LFE Ls Rs from the top
       gk = 0; loop(6, mbarH(mx0, myy - 7 + gk * 2.6, mbw, 2, dbs(gk == 0 ? mOL : (gk == 1 ? mOR : (gk == 2 ? mOC : (gk == 3 ? mOLf : (gk == 4 ? mOLs : mORs)))))); gk += 1; );
     ) : (
-    mbarH(mx0, myy - 3, mbw, 2.5, dbs(ml)); mbarH(mx0, myy + 0.7, mbw, 2.5, dbs(mr));   // green / amber / red zones
+    gj == 0 && inN() == 6 ? ( gk = 0; loop(6, mbarH(mx0, myy - 7 + gk * 2.6, mbw, 2, dbs(mmin(gk))); gk += 1; ); )
+    : ( gj == 0 && inN() == 1 ? mbarH(mx0, myy - 2, mbw, 4, dbs(ml))
+    : ( mbarH(mx0, myy - 3, mbw, 2.5, dbs(ml)); mbarH(mx0, myy + 0.7, mbw, 2.5, dbs(mr)); ); );   // green / amber / red zones
     );
     mh > -60 ? ( col(mh > -1 ? cIOTT : cTEXT, 1); R(mx0 + mbw * lin2f(mh, -60, 0) - 0.6, myy - 4, 1.2, 8); );
     col(cTEXT, 1); gfx_setfont(2);
@@ -8896,7 +8920,7 @@ actcol = cTEXT; kcol = cTEXT;
 
 // ---- redraw decision: full frame only when something besides the meters can have changed ----
 ukey = 0; i = 1; loop(NSL, ukey += slider(i) * (i * 7919 + 1); i += 1; );
-ukey += (slider136 >= 0.5 ? mOC * 7.1 + mOLf * 7.3 + mOLs * 7.7 + mORs * 7.9 + hO5 * 8.3 : 0) + slider136 * 5003 + slider137 * 5009 + slider138 * 17.3 + slider139 * 19.7 + slider140 * 23.1 + slider141 * 29 + slider142 * 31 + slider143 * 37.7 + slider144 * 41.3 + slider145 * 43.7 + slider146 * 47.9 + slider147 * 59.1 + slider148 * 61.3 + slider149 * 67.7 + slider150 * 71.9 + slider151 * 73.1 + slider152 * 79.3 + qSnapK * 53.3 + pro_on * 3.3;   // RoomservicePro: the output format, the speaker layout and the 5.1 settings redraw the view (host automation, too)
+ukey += (slider136 >= 0.5 ? mOC * 7.1 + mOLf * 7.3 + mOLs * 7.7 + mORs * 7.9 + hO5 * 8.3 : 0) + slider136 * 5003 + slider137 * 5009 + slider138 * 17.3 + slider139 * 19.7 + slider140 * 23.1 + slider141 * 29 + slider142 * 31 + slider143 * 37.7 + slider144 * 41.3 + slider145 * 43.7 + slider146 * 47.9 + slider147 * 59.1 + slider148 * 61.3 + slider149 * 67.7 + slider150 * 71.9 + slider151 * 73.1 + slider152 * 79.3 + slider153 * 83.9 + qSnapK * 53.3 + pro_on * 3.3;   // RoomservicePro: the output format, the speaker layout and the 5.1 settings redraw the view (host automation, too)
 soloT = time_precise();                  // heartbeat: a solo lasts only while this window is drawn
 ukey += soloM * 4201 + selw * 53.3 + mouse_x * 3.1 + mouse_y * 5.3 + mouse_cap * 1000.7 + gfx_w * 7.7 + gfx_h * 11.3 + zoomv * 31 + saveArm * 37;
 i = 1; loop(7, ukey += vopt[i] * (101 + i * 13); i += 1; ); ukey += vopt[14] * 7717 + vopt[15] * 1229 + snlast * 17 + vopt[9] * 977 + vopt[10] * 1039 + vopt[11] * 1103 + vopt[12] * 1171 + vopt[13] * 1187 + scy * 3.7 + szoom * 1213;
@@ -12838,6 +12862,8 @@ function gfxp13()
 (
 mmflush(0);
 thm_open ? (
+  thz = tabm && szoom;   // tabs: the Interface menu at the page scale, under the logo (as the room menu)
+  thz ? ( gsS = gs; goxS = gox; goyS = goy; mxS = mx; myS = my; WTS = WT; HTS = HT; gs = gsN; gox = goxN; goy = goyN; WT = WTN; HT = HTN; setfonts(); mx = (mouse_x - gox) / gs; my = (mouse_y - goy) / gs; );
   col(cINK, 0.14); RR(thmx + 1, thmy + 3, thmw, thmh, 8);
   col(cSURF, 1); RR(thmx, thmy, thmw, thmh, 8); col(cBORD, 1); RRO(thmx, thmy, thmw, thmh, 8);
   col(cMUTED, 1); gfx_setfont(7); txt("Interface", thmx + 12, thmy + 15, 0);
@@ -12850,6 +12876,7 @@ thm_open ? (
     thhv ? ( tipon = 1; tipstr = gk == 0 ? "Follows the light / dark setting of your computer" : (gk == 1 ? "The dark look" : "The light look"); tipx = thmx + thmw + 80; tipy = thry + thmr / 2; );
     gk += 1;
   );
+  thz ? ( gs = gsS; gox = goxS; goy = goyS; WT = WTS; HT = HTS; setfonts(); mx = mxS; my = myS; );
 );
 rmenu ? (
   rmZ = tabm && szoom;   // tabs: the room menu at the page scale (it opens from the top bar)
@@ -13596,7 +13623,7 @@ gfxp15();
 ) : (
   // partial frame: only the I/O meters move (playback) - repaint that section alone (image 1 still holds the last frame)
   // iokey = fingerprint of everything the I/O meters show (values quantized, weighted by small primes) - repaint only when it changes
-  iokey = floor(dbs(pkIL) * 2) + floor(dbs(pkIR) * 2) * 3 + floor(dbs(pkOL) * 2) * 7 + floor(dbs(pkOR) * 2) * 11
+  iokey = floor(dbs(pkJC) * 2) * 47 + floor(dbs(pkJF) * 2) * 53 + floor(dbs(pkJS) * 2) * 59 + floor(dbs(pkJT) * 2) * 61 + inch * 67 + floor(dbs(pkIL) * 2) + floor(dbs(pkIR) * 2) * 3 + floor(dbs(pkOL) * 2) * 7 + floor(dbs(pkOR) * 2) * 11
         + floor(hIn) * 13 + floor(hOut) * 17 + floor(hIL * 10) * 31 + floor(hIR * 10) * 37 + floor(hOL * 10) * 41 + floor(hOR * 10) * 43 + (gwarn > 0 && time_precise() - lastblk < 0.3) * floor(time_precise() * 8) * 19 + floor(dbs(lmgv) * 4) * 29 + (time_precise() - lastblk > 0.3) * 31 + floor(time_precise() / 1.5) * 23 + (secopen(7) && time_precise() - lastblk < 3) * floor(time_precise() * 25) * 41 + floor((crvS > 1.5 ? 3 : crvS) * 50 + 0.5) * 43;   // the displayed (calm) correlation decides the repaint - the raw value changed every frame and repainted the meters and the mini meter for nothing
   // an open menu, panel or page lies on top: no repaint of the section through it - the next frame is a full one
   ovlon = rsave || rmenu || smenu || fmenu || bmenu || kmenu || wmenu || emenu || helpon || xpon || dmenu || tpvis || snedit || shpin || shcur || hlpon || snctx || mpmenu || ffpmenu || rpmenu || kovl;   // + the Motion, Free field and Reflector menus and the keys page

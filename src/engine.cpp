@@ -50,6 +50,7 @@ void Engine::processT(const Real* const* in, Real* const* out, int nIn, int nOut
     const int ni = nIn < codeIns ? nIn : codeIns, no = nOut < codeOuts ? nOut : codeOuts;
     g.v_samplesblock = frames;
     g.v_num_ch = nOut > nIn ? nOut : nIn;
+    { static const char* ti_ = std::getenv("AHH_TEST_INCH"); g.g_inch = ti_ ? std::atof(ti_) : (double)inputChannels; }
     if (mustSlider) { g.S_slider(); mustSlider = false; }
     g.S_block();
     for (int i = 0; i < frames; i++) {

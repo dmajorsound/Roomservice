@@ -181,6 +181,7 @@ void RoomServiceProcessor::process(juce::AudioBuffer<Real>& buffer) {
     const int ni = juce::jmin(6, juce::jmax(2, nIn)), no = juce::jmin(6, nOut);
     for (int c = 0; c < ni; c++) ins[c] = buffer.getReadPointer(c < nIn ? c : 0);
     for (int c = 0; c < no; c++) outs[c] = buffer.getWritePointer(c);
+    engine.inputChannels = nIn;
     engine.processT<Real>(ins, outs, ni, no, n, ti);
     const int lat = engine.latency();
     if (lat != lastLatency) { lastLatency = lat; setLatencySamples(lat); }

@@ -1776,6 +1776,21 @@
     "Rear",
     "Around"
    ]
+  },
+  {
+   "idx": 153,
+   "default": 1.0,
+   "lo": 0.0,
+   "hi": 3.0,
+   "step": 1.0,
+   "label": "LFE filter slope (per octave)",
+   "hidden": true,
+   "enums": [
+    "12 dB",
+    "24 dB",
+    "48 dB",
+    "96 dB"
+   ]
   }
  ],
  "in_pins": 6,

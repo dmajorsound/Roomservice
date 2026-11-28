@@ -830,6 +830,7 @@ struct Gen : Runtime {
   double g_helpon = 0;
   double g_hfr2 = 0;
   double g_hfrp = 0;
+  double g_hi6 = 0;
   double g_hidetx = 0;
   double g_hidew = 0;
   double g_hil = 0;
@@ -864,6 +865,7 @@ struct Gen : Runtime {
   double g_igk = 0;
   double g_igt = 0;
   double g_ik = 0;
+  double g_inch = 0;
   double g_infw = 0;
   double g_inl1 = 0;
   double g_inr1 = 0;
@@ -1383,6 +1385,10 @@ struct Gen : Runtime {
   double g_pht = 0;
   double g_pkil = 0;
   double g_pkir = 0;
+  double g_pkjc = 0;
+  double g_pkjf = 0;
+  double g_pkjs = 0;
+  double g_pkjt = 0;
   double g_pkol = 0;
   double g_pkor = 0;
   double g_pkx = 0;
@@ -1463,6 +1469,7 @@ struct Gen : Runtime {
   double g_qlfc = 0;
   double g_qlffc = 0;
   double g_qlfm = 0;
+  double g_qlfn = 0;
   double g_qlfs = 0;
   double g_qlfw = 0;
   double g_qlh = 0;
@@ -1927,6 +1934,7 @@ struct Gen : Runtime {
   double g_ths = 0;
   double g_thx = 0;
   double g_thy = 0;
+  double g_ti6 = 0;
   double g_til = 0;
   double g_tipforce = 0;
   double g_tipon = 0;
@@ -2478,6 +2486,8 @@ struct Gen : Runtime {
   double F_inbox(double, double, double, double);
   double F_inboxn(double, double, double, double);
   double F_inface(double);
+  double F_inn();
+  double F_innm(double);
   double F_itip(double, double, double, double, double, double);
   double F_kbrow();
   double F_keepfit(double, double, double);
@@ -2542,6 +2552,7 @@ struct Gen : Runtime {
   double F_mmbar(double, double, double, double, double, double);
   double F_mmdraw(double, double);
   double F_mmflush(double);
+  double F_mmin(double);
   double F_mmout(double);
   double F_mmover();
   double F_mmpop(double, double);
