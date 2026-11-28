@@ -14,7 +14,7 @@ DRAWN = {0x2713}   # drawn as a path, not taken from a font
 
 def main(path):
     src = open(path, encoding='utf-8').read()
-    cmaps = [set(TTFont('resources/fonts/' + f).getBestCmap()) for f in ('Arimo-Regular.ttf', 'Arimo-Bold.ttf')]
+    cmaps = [set(TTFont('resources/fonts/' + f).getBestCmap()) for f in ('Mulish-Regular.ttf', 'Mulish-SemiBold.ttf')]
     have = cmaps[0] & cmaps[1]
     used, bad = set(), []
     for n, line in enumerate(src.split('\n'), 1):

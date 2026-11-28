@@ -1,7 +1,7 @@
 desc: Ahh
 //tags: reverb room acoustics image-source filter education surround
 //author: Bernd Dormayer
-//version: 1.3.1
+//version: 1.3.2
 //
 // Physical room reverb:
 //   Direct sound  : delay r/c, level 1/r, air absorption, stereo by facing direction (level + delay)
@@ -184,7 +184,7 @@ options:want_all_kb
 
 @init
 // THE VERSION, once: the footer text (the desc line and //version above must say the same)
-strcpy(#verstr, "V 1.3.1 - developed with AI assistance");
+strcpy(#verstr, "V 1.3.2 - developed with AI assistance");
 ext_noinit = 1;                            // do not re-run @init at every playback start
 gfx_ext_retina = 1;
 C_SND = 343;
@@ -3108,7 +3108,20 @@ function txtfit(s, x, yc, w) local(n)
   tws(#tfit) > w ? (
     n = strlen(#tfit);
     while ( n -= 1; str_setlen(#tfit, n); strcpy(#tfit2, #tfit); strcat(#tfit2, "…"); n > 1 && tws(#tfit2) > w; );
-    strcpy(#tfit, #tfit2);
+    // never cut inside a word: a hint line of parts ("a  ·  b  ·  c") loses whole parts, other text ends after its last whole word
+    tfc = n - 1; tfd = -1; tfsp = -1;
+    while ( tfc > 0 && tfd < 0 ) (
+      (str_getchar(#tfit, tfc) + 256) % 256 == 0xB7 && (str_getchar(#tfit, tfc - 1) + 256) % 256 == 0xC2 ? tfd = tfc - 1;
+      tfsp < 0 && str_getchar(#tfit, tfc) == 32 && tfc < n - 1 ? tfsp = tfc;
+      tfc -= 1;
+    );
+    tfd > 2 ? (
+      while ( tfd > 0 && str_getchar(#tfit, tfd - 1) == 32 ) ( tfd -= 1; );
+      str_setlen(#tfit, tfd);
+    ) : (
+      tfsp > 0 ? ( str_setlen(#tfit, tfsp); strcpy(#tfit2, #tfit); strcat(#tfit2, " …"); );
+      strcpy(#tfit, #tfit2);
+    );
   );
   txt(#tfit, x, yc, 0);
 );
@@ -3637,7 +3650,7 @@ function baricon(t, cx, cy, c)
   );
 );
 // Draws a rounded surface card (radius 8; bordered in mono mode) and stores its position/width in crdX, crdY, crdW.
-function card(x, y, w, h) ( crdX = x; crdY = y; crdW = w; crdH = h; col(cSURF, 1); RR(x, y, w, h, 8); monoOn ? ( col(cBORD, 1); RRO(x, y, w, h, 8); ); );
+function card(x, y, w, h) ( crdX = x; crdY = y; crdW = w; crdH = h; col(cSURF, 1); RR(x, y, w, h, 10); monoOn ? ( col(cBORD, 1); RRO(x, y, w, h, 10); ); );
 // (the module ON / OFF switch is the round power button tgl() below; chip is the pill toggle)
 // pill toggle: filled in its color when on, outlined when off; returns 1 on click
 function chip(x, y, w, h, s, act, c) local(hit)
@@ -3892,7 +3905,7 @@ function pgopen(id, cw, ch, bodyh, tt, dyn) local(ih, iw, re)
   col(cINK, 0.16); RR(pgCX + 2, pgCY + 4, cw, ch, 11);
   col(cBORD, 1); RR(pgCX - 1, pgCY - 1, cw + 2, ch + 2, 11); col(cSURF, 1); RR(pgCX, pgCY, cw, ch, 10);
   col(cTEXT, 1); gfx_setfont(5); txt(tt, pgCX + 20, pgCY + 22, 0);
-  col(cMUTED, 1); gfx_setfont(13); txt(pgMax > 0 ? "wheel = scroll  ·  × or Esc = close" : "× or Esc = close", pgCX + cw - 40, pgCY + 22, 2);
+  id != 1 ? ( col(cMUTED, 1); gfx_setfont(13); txt(pgMax > 0 ? "wheel = scroll  ·  × or Esc = close" : "× or Esc = close", pgCX + cw - 40, pgCY + 22, 2); );   // (the help page has its two buttons there)
   col(cHAIR, 1); LN(pgCX + 12, pgBY - 1, pgCX + cw - 12, pgBY - 1);
   // the body into image 2: page coordinates, its top left = (pgCX, pgBY); the mouse moves with the scroll
   pgGX = gox; pgGY = goy; iw = ceil(cw * gs) + 1; ih = ceil(max(bodyh, pgBH) * gs) + 1;
@@ -3946,7 +3959,7 @@ function kovldraw() local(cw, ovch, cx, cy, c1, c2, y, ovkw, ovdw)
   krow(c1, y, "[  /  ]", "Tabs: previous / next module", ovkw, ovdw); y += 25;
   krow(c1, y, "0", "Expert: Tabs <-> All (All with Fit all)", ovkw, ovdw); y += 25;
   krow(c1, y, "T  ·  A  ·  F", "Expert: Tabs  ·  All  ·  Fit on / off", ovkw, ovdw); y += 25;
-  krow(c1, y, "Z", "Zoom what is under the mouse (Stage View: every mode)", ovkw, ovdw); y += 25;
+  krow(c1, y, "Z", "Zoom what is under the mouse", ovkw, ovdw); y += 25;
   krow(c1, y, "Esc", "Close zoom, menus, solo, help", ovkw, ovdw); y += 25;
   krow(c1, y, "?", "This page", ovkw, ovdw); y += 25;
   krow(c1, y, "Hold Ctrl/Cmd", "Help text under the mouse (also Tips off)", ovkw, ovdw); y += 25;
@@ -9718,7 +9731,7 @@ wavesOn ? (
       gj += 1; );
   );
   whit > 0 ? ( PJ(lx, ly, lz); col(cGLS, min(1, 2 * whit)); CI(qx, qy, 13, 0); CI(qx, qy, 14, 0); );
-  col(cMUTED, 1); gfx_setfont(4); sprintf(#w1, "waves %.0f× slower than real", C_SND / vvis); den > 0 ? strcat(#w1, "  ·  delay echoes (magenta) closer than real"); txt(#w1, VX + VW - 10, VY + VH - 32, 2);   // (right - the source pill sits left)
+  col(cMUTED, 1); gfx_setfont(4); sprintf(#w1, "waves %.0f× slower than real", C_SND / vvis); den > 0 ? strcat(#w1, "  ·  delay echoes (magenta) closer than real"); basic ? ( strcpy(#wvn, #w1); wvnw = tws(#w1); ) : txt(#w1, VX + VW - 10, VY + VH - 32, 2);   // (right - the source pill sits left; Basic: on the hint line, its button row is full)
 );
 
 // direct sound (blue)
@@ -9825,7 +9838,7 @@ rbtn(VX + 156, BRY, 5.5, "L", lockL, cLIS, lockL ? "Listener locked – click to
 rbtn(VX + 170, BRY, 5.5, "B", lockB, cBARTT, lockB ? "Barrier position locked – click to unlock" : "Lock the position of the barrier (handle in the room and Pos knob)") ? ( vopt[9] = lkb + (lockB ? -4 : 4); );
 rbtn(VX + 184, BRY, 5.5, floor(slider41 + 0.5) == 2 ? "W" : "D", lockE, cELK, lockE ? "Door / window locked – click to unlock" : "Lock the door / window: its place in the wall and how far it is open (mouse, wheel, Open knob)") ? ( vopt[9] = lkb + (lockE ? -8 : 8); );
 ) : (
-  col(cMUTED, 1); gfx_setfont(4); txtfit(isfree ? "Drag = move  ·  Ctrl/Cmd + drag = on a line  ·  Shift + drag = height  ·  Alt+Shift + drag = stereo width  ·  double-click = center" : "Drag = move  ·  Ctrl/Cmd + drag = on a line  ·  Shift + drag = height  ·  Alt+Shift + drag = stereo width  ·  double-click = center  ·  front corner = whole room  ·  drag a room edge = room size", VX + 10, BRY, VW - 60);
+  col(cMUTED, 1); gfx_setfont(4); wvnw > 0 ? txt(#wvn, VX + VW - 10, BRY, 2); txtfit(isfree ? "Drag = move  ·  Ctrl/Cmd + drag = on a line  ·  Shift + drag = height  ·  Alt+Shift + drag = stereo width  ·  double-click = center" : "Drag = move  ·  Ctrl/Cmd + drag = on a line  ·  Shift + drag = height  ·  Alt+Shift + drag = stereo width  ·  double-click = center  ·  front corner = whole room  ·  drag a room edge = room size", VX + 10, BRY, VW - 60 - (wvnw > 0 ? wvnw + 14 : 0)); wvnw = 0;
 );
 // BACK PART material in the enlarged view (only with a barrier): own material for the part between back wall and barrier
 bon && !isfree && zoomv ? (
@@ -12023,7 +12036,7 @@ function gfxpM() local(x0, w0, y0, mtq, pat, mvs, ctr, k, cx, cy, tw1, bx, bw, n
     clip ? ( col(cMOTT, 1); txtfit(pat == 4 ? "Line longer than the room – it is cut to the room, the ball waits at its ends" : "Path larger than the room – the ball waits at the wall until it comes back in", stx, sty + 6, x0 + w0 - 10 - stx - 66);
       chip(x0 + w0 - 70, sty - 1, 60, 14, "Fit path", 0, cMOTT) ? ( setp(104, max(0.1, fitr - 0.02) / rs); );   // Size down to what fits
       tipbox(x0 + w0 - 70, sty - 1, 60, 14, "Fit path: sets Size to the largest value that keeps the whole path inside the room"); )
-         : ( col(cMUTED, 1); txtfit(pat == 4 ? "Starts again with every playback start and loop; free-running while stopped" : "Starts from its beginning at every playback start and with Start / Restart; loops run on smoothly", stx, sty + 6, x0 + w0 - 10 - stx); );
+         : ( col(cMUTED, 1); txtfit(pat == 4 ? "Starts again with every playback start and loop; free-running while stopped" : "Restarts at every playback start and with Start / Restart; loops run on smoothly", stx, sty + 6, x0 + w0 - 10 - stx); );
     tipbox(stx, sty - 18, x0 + w0 - 10 - stx, 36, "The positions are written to Source / Listener X, Y (and height) – record them in REAPER with Write or Latch; a read envelope on them overrides the pattern. Drag a moving ball = move its whole path");
     );   // end of: knobs and status (not while the tempo tools are open)
   );

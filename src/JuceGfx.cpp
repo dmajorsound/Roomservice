@@ -1,5 +1,7 @@
 #include "JuceGfx.h"
 #include "RsData.h"
+#include <map>
+#include <set>
 
 namespace rs {
 
@@ -8,11 +10,18 @@ namespace rs {
 static inline bool fin(double v) { return std::isfinite(v) && std::fabs(v) < 1.0e6; }
 static inline int ti(double v) { return fin(v) ? (int)v : 0; }   // LICE takes ints: truncation like the C cast
 
+static const double kFontScale = 1.10;
+static const float kRegularWidth = 0.965f;   // Mulish Regular runs a little wider than Arial: brought back, so every text keeps the room the layout gives it
+// Layout test (tools/check_layout.py): with AHH_TEST_TEXTLOG=<file> every frame writes its texts and filled areas there.
+static const char* kLayoutLog = std::getenv("AHH_TEST_TEXTLOG");
+static std::map<int, std::string> gLayout;      // per drawing target: an image drawn once (a page body) keeps its entries
+static std::set<int> gLayoutNow;
+static std::string& layoutLog(int dest) { if (gLayoutNow.insert(dest).second) gLayout[dest].clear(); return gLayout[dest]; }
 static const char kCheck[] = "\xE2\x9C\x93";   // U+2713
 
 juce::Typeface::Ptr JuceGfx::typeface(bool bold) {
-    static juce::Typeface::Ptr regular = juce::Typeface::createSystemTypefaceFor(RsData::ArimoRegular_ttf, (size_t)RsData::ArimoRegular_ttfSize);
-    static juce::Typeface::Ptr strong = juce::Typeface::createSystemTypefaceFor(RsData::ArimoBold_ttf, (size_t)RsData::ArimoBold_ttfSize);
+    static juce::Typeface::Ptr regular = juce::Typeface::createSystemTypefaceFor(RsData::MulishRegular_ttf, (size_t)RsData::MulishRegular_ttfSize);
+    static juce::Typeface::Ptr strong = juce::Typeface::createSystemTypefaceFor(RsData::MulishSemiBold_ttf, (size_t)RsData::MulishSemiBold_ttfSize);
     return bold ? strong : regular;
 }
 
@@ -60,7 +69,17 @@ void JuceGfx::beginFrame(int w, int h) {
     }
 }
 
-void JuceGfx::endFrame() { dropG(); }
+void JuceGfx::endFrame() {
+    dropG();
+    if (kLayoutLog != nullptr) {
+        if (FILE* fp = std::fopen(kLayoutLog, "wb")) {
+            std::fprintf(fp, "S\t%d\t%d\n", screenImg.getWidth(), screenImg.getHeight());
+            for (auto& kv : gLayout) std::fwrite(kv.second.data(), 1, kv.second.size(), fp);
+            std::fclose(fp);
+        }
+        gLayoutNow.clear();
+    }
+}
 
 juce::Image* JuceGfx::destImage() {
     const int d = (int)rt.v_gfx_dest;
@@ -112,6 +131,7 @@ void JuceGfx::rect(double x, double y, double w, double h, bool filled) {
     auto& gr = G(); gr.setColour(colour());
     const int ix = ti(x), iy = ti(y), iw = ti(w), ih = ti(h);
     if (iw <= 0 || ih <= 0) return;
+    if (kLayoutLog != nullptr && filled && rt.v_gfx_a > 0.9 && iw >= 4) { char b[96]; std::snprintf(b, sizeof b, "R\t%d\t%d\t%d\t%d\t%d\n", (int)rt.v_gfx_dest, ix, iy, iw, ih); layoutLog((int)rt.v_gfx_dest) += b; }
     if (filled) { if (!rawFill(ix, iy, iw, ih, colour())) gr.fillRect(ix, iy, iw, ih); } else gr.drawRect(ix, iy, iw, ih, 1);
 }
 
@@ -227,7 +247,7 @@ void JuceGfx::gradrect(const double* p, int n) {
 
 const juce::Font& JuceGfx::font() {
     if (!fonts[curFont].set) {
-        fonts[curFont].font = juce::Font(juce::FontOptions(typeface(false)).withHeight(13.0f));
+        fonts[curFont].font = juce::Font(juce::FontOptions(typeface(false)).withHeight((float)(13.0 * kFontScale)).withHorizontalScale(kRegularWidth));
         fonts[curFont].key = "r|13";
         fonts[curFont].bold = false;
         fonts[curFont].set = true;
@@ -297,11 +317,13 @@ void JuceGfx::setfont(int idx, const std::string* face, double sz, int flags) {
             if (ch == 'b') bold = true;
             if (ch == 'u') underline = true;
         }
-        const float h = (float)juce::jlimit(1.0, 2000.0, std::isfinite(sz) ? sz : 13.0);
+        // The script asks for sizes made for Arial. Mulish has more room above and below its letters: at the same height
+        // they would be a tenth smaller, so the height is raised by kFontScale - the letters keep their size and width.
+        const float h = (float)juce::jlimit(1.0, 2000.0, (std::isfinite(sz) ? sz : 13.0) * kFontScale);
         std::string key = std::string(bold ? "b" : "r") + (underline ? "u|" : "|") + std::to_string(h);
         auto it = fontCache.find(key);
         if (it == fontCache.end())
-            it = fontCache.emplace(key, juce::Font(juce::FontOptions(typeface(bold)).withHeight(h).withUnderline(underline))).first;
+            it = fontCache.emplace(key, juce::Font(juce::FontOptions(typeface(bold)).withHeight(h).withHorizontalScale(bold ? 1.0f : kRegularWidth).withUnderline(underline))).first;
         fonts[idx].font = it->second;
         fonts[idx].key = key;
         fonts[idx].bold = bold;
@@ -349,6 +371,10 @@ void JuceGfx::drawstr(const std::string& s, int flags, double right, double bott
     }
     auto& gr = G();
     const int ix = (int)std::floor(x + 0.5f), iy = (int)std::floor(y + 0.5f);
+    if (kLayoutLog != nullptr) {
+        char b[160]; std::snprintf(b, sizeof b, "T\t%d\t%d\t%d\t%.1f\t%.1f\t%.2f\t%d\t%d\t%d\t%d\t%d\t", (int)rt.v_gfx_dest, ix, iy, tw, th, rt.v_gfx_a, clip ? 1 : 0, ti(ox), ti(oy), ti(bw), ti(bh));
+        auto& lg = layoutLog((int)rt.v_gfx_dest); lg += b; lg += s; lg += '\n';
+    }
     if (clip) {
         juce::Graphics::ScopedSaveState ss(gr);
         gr.reduceClipRegion(juce::Rectangle<int>(ti(ox), ti(oy), ti(bw), ti(bh)));

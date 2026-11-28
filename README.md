@@ -1,6 +1,6 @@
-# Ahh! 1.3.1 – stereo and 5.1 in one (formerly Roomservice) – nativer VST3/AU/CLAP-Port (JUCE)
+# Ahh! 1.3.2 – stereo and 5.1 in one (formerly Roomservice) – nativer VST3/AU/CLAP-Port (JUCE)
 
-Nativer C++-Port von `Roomservice.jsfx` (Version 1.3.1, Stereo and 5.1) als VST3 und CLAP (macOS zusätzlich AU).
+Nativer C++-Port von `Roomservice.jsfx` (Version 1.3.2, Stereo and 5.1) als VST3 und CLAP (macOS zusätzlich AU).
 Audio und Oberfläche sind die der JSFX. Es läuft keine EEL2-Engine mit, der ganze Code ist kompiliertes C++.
 
 ## Wie der Port gebaut ist

@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.22)
 # Universal (Apple Silicon + Intel). For a faster Intel-only build: -DCMAKE_OSX_ARCHITECTURES=x86_64
 set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13" CACHE STRING "")
 set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "")
-project(Roomservice VERSION 1.3.1 LANGUAGES C CXX)
+project(Roomservice VERSION 1.3.2 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -24,7 +24,7 @@ juce_add_plugin(Roomservice
   PLUGIN_CODE AhhS              # (a new plug-in: stereo and 5.1 in one; not the id of the stereo-only Ahh up to 1.0.x)
   FORMATS ${RS_FORMATS}
   PRODUCT_NAME "Ahh"
-  VERSION 1.3.1
+  VERSION 1.3.2
   IS_SYNTH FALSE
   NEEDS_MIDI_INPUT FALSE
   NEEDS_MIDI_OUTPUT FALSE
@@ -34,10 +34,11 @@ juce_add_plugin(Roomservice
   AU_MAIN_TYPE kAudioUnitType_Effect
   COPY_PLUGIN_AFTER_BUILD FALSE)
 
-# The plug-in's own font (Arimo: the metric twin of Arial, SIL Open Font License, resources/fonts/OFL.txt) is built in,
+# The plug-in's own font (Mulish Regular and SemiBold, SIL Open Font License, resources/fonts/OFL-Mulish.txt; with two
+# characters from Arimo, see tools/build_fonts.py) is built in,
 # so the text looks the same on every machine and never depends on installed fonts.
 juce_add_binary_data(RoomserviceData NAMESPACE RsData HEADER_NAME RsData.h
-  SOURCES resources/fonts/Arimo-Regular.ttf resources/fonts/Arimo-Bold.ttf resources/Ahh_icon.svg)
+  SOURCES resources/fonts/Mulish-Regular.ttf resources/fonts/Mulish-SemiBold.ttf resources/Ahh_icon.svg)
 set_target_properties(RoomserviceData PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 file(GLOB RS_GEN ${CMAKE_CURRENT_SOURCE_DIR}/gen/*.cpp)

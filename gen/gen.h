@@ -2115,6 +2115,7 @@ struct Gen : Runtime {
   double g_wt = 0;
   double g_wtn = 0;
   double g_wts = 0;
+  double g_wvnw = 0;
   double g_x0 = 0;
   double g_xa = 0;
   double g_xabg = 0;

@@ -47,9 +47,9 @@ private:
     juce::Graphics& G();          // graphics for the current gfx_dest
     juce::Image* destImage();
     juce::Colour colour() const;
-    // Text never uses a system font: the plug-in carries its own (Arimo, the metric twin of Arial, SIL OFL), so
+    // Text never uses a system font: the plug-in carries its own (Mulish, SIL OFL), so
     // every machine draws the same glyphs with the same widths - whatever fonts are installed or missing there.
-    // The one character Arimo lacks (U+2713, the check mark) is drawn as a path.
+    // The one character the font lacks (U+2713, the check mark) is drawn as a path.
     static juce::Typeface::Ptr typeface(bool bold);
     struct FontSlot { juce::Font font { juce::FontOptions() }; std::string key; bool bold = false; bool set = false; };
     // text is the expensive part in JUCE: fonts, string widths and laid-out glyphs are cached

@@ -343,7 +343,7 @@ double Gen::F_bxing(double l_fx, double l_fz, double l_d1, double l_d2) {
 
 double Gen::F_card(double l_x, double l_y, double l_w, double l_h) {
   
-  return ((void)((g_crdx = l_x)), (void)((g_crdy = l_y)), (void)((g_crdw = l_w)), (void)((g_crdh = l_h)), (void)(F_col(g_csurf, 1.0)), (void)(F_rr(l_x, l_y, l_w, l_h, 8.0)), (B(g_monoon) ? (double)((void)(F_col(g_cbord, 1.0)), F_rro(l_x, l_y, l_w, l_h, 8.0)) : 0.0));
+  return ((void)((g_crdx = l_x)), (void)((g_crdy = l_y)), (void)((g_crdw = l_w)), (void)((g_crdh = l_h)), (void)(F_col(g_csurf, 1.0)), (void)(F_rr(l_x, l_y, l_w, l_h, 10.0)), (B(g_monoon) ? (double)((void)(F_col(g_cbord, 1.0)), F_rro(l_x, l_y, l_w, l_h, 10.0)) : 0.0));
 }
 
 double Gen::F_chev(double l_x, double l_y, double l_dx, double l_dy, double l_len, double l_wd) {

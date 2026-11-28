@@ -132,6 +132,7 @@ void RoomServiceEditor::timerCallback() {
     // a newly opened editor has empty images: the script must draw a whole frame, whatever it believes is still on screen
     // (it only knew a reopened window by a pause of 0.25 s - a quick close and open in the host left the window blank)
     if (freshEditor) { g->g_fbw = 0.0; freshEditor = false; }
+    { static const bool layoutTest = std::getenv("AHH_TEST_TEXTLOG") != nullptr; if (layoutTest) g->g_fbw = 0.0; }   // layout test: every frame drawn in full
     const double t0 = juce::Time::getMillisecondCounterHiRes();
     gfx.beginFrame(w, h);
     proc.engine.runGfx(&gfx, w, h);
